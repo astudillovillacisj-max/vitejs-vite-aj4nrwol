@@ -1,0 +1,318 @@
+import React, { useState, useEffect, useMemo } from 'react'; import {
+initializeApp } from 'firebase/app'; import { getAuth, signInAnonymously,
+onAuthStateChanged } from 'firebase/auth'; import { getFirestore, collection,
+addDoc, updateDoc, doc, onSnapshot, query, deleteDoc, serverTimestamp } from
+'firebase/firestore'; import { Fish, Clock, ArrowRight, Trash2, Archive,
+PlusCircle, Truck, Layers } from 'lucide-react'; // --- CONFIGURACIÓN FIREBASE
+--- const firebaseConfig = { apiKey: "AIzaSyAvYHisHGRvZyjUqT6BJ5S7Mn-ycfBkAKU",
+authDomain: "chillroom-control.firebaseapp.com", projectId: "chillroom-control",
+storageBucket: "chillroom-control.firebasestorage.app", messagingSenderId:
+"276861493528", appId: "1:276861493528:web:70530da24132a8c5167e6d",
+measurementId: "G-LCDCQNE8VX" }; // Inicializar Firebase const app =
+initializeApp(firebaseConfig); const auth = getAuth(app); const db =
+getFirestore(app); // --- COMPONENTES --- // 1. Tarjeta de Ticket const
+TicketCard = ({ ticket, onMove, isProcessed }) => { const speciesColors = { 'SJ
+-3': { bg: 'bg-red-50', border: 'border-red-500', text: 'text-red-900', badge:
+'bg-red-100 text-red-800' }, 'YF 3-4': { bg: 'bg-blue-50', border:
+'border-blue-500', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-800' },
+'YF +7.5': { bg: 'bg-green-50', border: 'border-green-500', text:
+'text-green-900', badge: 'bg-green-100 text-green-800' }, 'Barrilete': { bg:
+'bg-gray-50', border: 'border-gray-500', text: 'text-gray-900', badge:
+'bg-gray-200 text-gray-800' } }; const style = speciesColors[ticket.species] ||
+speciesColors['Barrilete']; const displayTime = ticket.exitTime ? new
+Date(ticket.exitTime.seconds * 1000).toLocaleTimeString([], {hour: '2-digit',
+minute:'2-digit'}) : ticket.kitchenTime; return (
+<div
+  className="{`relative"
+  p-3
+  mb-3
+  rounded-lg
+  border-l-4
+  shadow-sm
+  transition-all
+  duration-200
+  group
+  ${style.bg}
+  ${style.border}
+  hover:shadow-md
+  cursor-pointer`}
+  onClick="{onMove}"
+>
+  <div className="flex justify-between items-start mb-1">
+    <span
+      className="{`text-[10px]"
+      font-bold
+      uppercase
+      tracking-wider
+      px-1.5
+      py-0.5
+      rounded
+      ${style.badge}`}
+    >
+      Lote: {ticket.batch}
+    </span>
+    <span
+      className="text-[10px] font-mono text-gray-500 bg-white/60 px-1 rounded flex items-center gap-1"
+    >
+      <Clock size="{10}" /> {ticket.kitchenTime}
+    </span>
+  </div>
+
+  <div className="flex items-center gap-2 mb-1">
+    <Fish className="{`${style.text}" opacity-70`} size="{16}" />
+    <span className="{`font-bold" text-lg leading-tight ${style.text}`}
+      >{ticket.species}</span
+    >
+  </div>
+
+  <div
+    className="flex items-center gap-2 text-xs text-gray-600 mt-2 border-t border-black/5 pt-1"
+  >
+    <Truck size="{12}" />
+    <span className="font-semibold">Rack: {ticket.rack}</span>
+  </div>
+
+  {!isProcessed && (
+  <div
+    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full p-1 shadow-sm"
+  >
+    <ArrowRight className="text-gray-400 hover:text-green-600" size="{20}" />
+  </div>
+  )} {isProcessed && (
+  <div
+    className="absolute right-2 bottom-2 text-[9px] font-bold text-green-700 bg-green-100 px-1 rounded border border-green-200"
+  >
+    OUT: {displayTime}
+  </div>
+  )}
+</div>
+); }; // 2. Componente Principal export default function App() { const [user,
+setUser] = useState(null); const [tickets, setTickets] = useState([]); const
+[loading, setLoading] = useState(true); // Estado del Formulario const
+[formData, setFormData] = useState({ kitchen: '1', species: 'SJ -3', batch: '',
+rack: '', kitchenTime: new Date().toLocaleTimeString([], { hour: '2-digit',
+minute: '2-digit' }) }); // --- AUTENTICACIÓN Y CARGA DE DATOS --- useEffect(()
+=> { signInAnonymously(auth).catch((error) => console.error("Error auth:",
+error)); const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u)); return
+() => unsubscribe(); }, []); useEffect(() => { const q = query(collection(db,
+'tickets')); const unsubscribe = onSnapshot(q, (snapshot) => { const
+loadedTickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+setTickets(loadedTickets); setLoading(false); }, (error) => {
+console.error("Error cargando tickets:", error); setLoading(false); }); return
+() => unsubscribe(); }, []); // --- LÓGICA DE NEGOCIO --- const
+handleInputChange = (e) => { const { name, value } = e.target; setFormData(prev
+=> ({ ...prev, [name]: value })); }; const handleSubmit = async (e) => {
+e.preventDefault(); if (!formData.batch || !formData.rack) return; try { await
+addDoc(collection(db, 'tickets'), { ...formData, status: 'chill_room',
+createdAt: serverTimestamp(), exitTime: null }); setFormData(prev => ({ ...prev,
+batch: '', rack: '', kitchenTime: new Date().toLocaleTimeString([], { hour:
+'2-digit', minute: '2-digit' }) })); } catch (error) { console.error("Error
+añadiendo ticket:", error); alert("Error: Verifica configuración de Firebase");
+} }; const moveToProcessed = async (ticket) => { if (ticket.status ===
+'processed') return; try { await updateDoc(doc(db, 'tickets', ticket.id), {
+status: 'processed', exitTime: serverTimestamp() }); } catch (error) {
+console.error(error); } }; const deleteProcessed = async () => { if
+(!window.confirm("¿Borrar todos los tickets procesados?")) return; const
+processedTickets = tickets.filter(t => t.status === 'processed');
+processedTickets.forEach(async (t) => { try { await deleteDoc(doc(db, 'tickets',
+t.id)); } catch (error) { console.error(error); } }); }; // --- ORDENAMIENTO ---
+const sortedTickets = useMemo(() => { return [...tickets].sort((a, b) =>
+(a.kitchenTime || "").localeCompare(b.kitchenTime || "")); }, [tickets]); const
+ticketsByKitchen = { '1': sortedTickets.filter(t => t.kitchen === '1' &&
+t.status === 'chill_room'), '2': sortedTickets.filter(t => t.kitchen === '2' &&
+t.status === 'chill_room'), '3': sortedTickets.filter(t => t.kitchen === '3' &&
+t.status === 'chill_room'), '4': sortedTickets.filter(t => t.kitchen === '4' &&
+t.status === 'chill_room'), '5': sortedTickets.filter(t => t.kitchen === '5' &&
+t.status === 'chill_room'), }; const processedTickets = sortedTickets .filter(t
+=> t.status === 'processed') .sort((a, b) => (b.exitTime?.seconds || 0) -
+(a.exitTime?.seconds || 0)); if (loading) return
+<div
+  className="flex h-screen items-center justify-center bg-slate-100 text-slate-500 font-sans"
+>
+  Conectando...
+</div>
+; return (
+<div
+  className="flex flex-col h-screen bg-slate-100 font-sans text-slate-800 overflow-hidden"
+>
+  {/* HEADER */}
+  <header
+    className="bg-slate-800 text-white p-4 shadow-lg flex justify-between items-center z-20"
+  >
+    <div className="flex items-center gap-3">
+      <div className="bg-yellow-500 p-2 rounded text-slate-900">
+        <Layers size="{24}" />
+      </div>
+      <div>
+        <h1 className="text-xl font-bold tracking-wider uppercase">
+          ChillRoom Control
+        </h1>
+        <p className="text-xs text-slate-400">Tablero Digital</p>
+      </div>
+    </div>
+    <div className="text-right hidden md:block">
+      <div className="text-2xl font-bold font-mono text-yellow-400">
+        {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+      </div>
+    </div>
+  </header>
+
+  <div className="flex flex-1 overflow-hidden">
+    {/* PANEL DE CONTROL */}
+    <aside
+      className="w-80 bg-white border-r border-slate-200 shadow-xl z-10 flex flex-col"
+    >
+      <div className="p-5 bg-slate-50 border-b border-slate-200">
+        <h2
+          className="text-sm font-bold text-slate-500 uppercase flex items-center gap-2"
+        >
+          <PlusCircle size="{16}" /> Nuevo Ingreso
+        </h2>
+      </div>
+      <form
+        onSubmit="{handleSubmit}"
+        className="p-5 flex flex-col gap-4 overflow-y-auto"
+      >
+        <div>
+          <label
+            className="block text-xs font-bold text-slate-500 uppercase mb-1"
+            >Cocina</label
+          >
+          <select
+            name="kitchen"
+            value="{formData.kitchen}"
+            onChange="{handleInputChange}"
+            className="w-full p-2 bg-slate-100 border border-slate-300 rounded font-bold text-lg outline-none"
+          >
+            {[1, 2, 3, 4, 5].map(k =>
+            <option key="{k}" value="{k}">Cocina {k}</option>
+            )}
+          </select>
+        </div>
+        <div>
+          <label
+            className="block text-xs font-bold text-slate-500 uppercase mb-1"
+            >Especie</label
+          >
+          <select
+            name="species"
+            value="{formData.species}"
+            onChange="{handleInputChange}"
+            className="w-full p-2 bg-slate-100 border border-slate-300 rounded font-medium outline-none"
+          >
+            <option value="SJ -3">SJ -3 (Rojo)</option>
+            <option value="YF 3-4">YF 3-4 (Azul)</option>
+            <option value="YF +7.5">YF +7.5 (Verde)</option>
+            <option value="Barrilete">Barrilete (Gris)</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              className="block text-xs font-bold text-slate-500 uppercase mb-1"
+              >Lote #</label
+            >
+            <input
+              type="text"
+              name="batch"
+              value="{formData.batch}"
+              onChange="{handleInputChange}"
+              placeholder="101"
+              className="w-full p-2 bg-slate-100 border border-slate-300 rounded outline-none font-mono"
+              autocomplete="off"
+            />
+          </div>
+          <div>
+            <label
+              className="block text-xs font-bold text-slate-500 uppercase mb-1"
+              >Rack #</label
+            >
+            <input
+              type="text"
+              name="rack"
+              value="{formData.rack}"
+              onChange="{handleInputChange}"
+              placeholder="A-1"
+              className="w-full p-2 bg-slate-100 border border-slate-300 rounded outline-none font-mono"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <div>
+          <label
+            className="block text-xs font-bold text-slate-500 uppercase mb-1"
+            >Hora Salida Cocina</label
+          >
+          <input
+            type="time"
+            name="kitchenTime"
+            value="{formData.kitchenTime}"
+            onChange="{handleInputChange}"
+            className="w-full p-2 bg-slate-100 border border-slate-300 rounded outline-none font-mono text-center"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled="{!formData.batch"
+          ||
+          !formData.rack}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold py-3 px-4 rounded shadow flex justify-center items-center gap-2"
+        >
+          <PlusCircle size="{20}" /> INGRESAR
+        </button>
+      </form>
+    </aside>
+
+    {/* TABLERO VISUAL */}
+    <main className="flex-1 flex overflow-hidden bg-slate-200 p-2 gap-2">
+      <div
+        className="flex-1 bg-white rounded-lg shadow-sm border border-slate-300 flex flex-col overflow-hidden"
+      >
+        <div
+          className="bg-blue-100 text-blue-900 text-center py-2 font-bold border-b border-blue-200 uppercase tracking-widest text-sm"
+        >
+          CHILL ROOM (ESPERA)
+        </div>
+        <div className="flex-1 flex overflow-x-auto divide-x divide-slate-200">
+          {[1, 2, 3, 4, 5].map(kitchenId => (
+          <div
+            key="{kitchenId}"
+            className="flex-1 min-w-[160px] flex flex-col bg-slate-50/50"
+          >
+            <div
+              className="text-center py-2 font-bold text-slate-500 border-b border-slate-200 bg-white sticky top-0 z-10"
+            >
+              COCINA {kitchenId}
+            </div>
+            <div className="p-2 flex-1 overflow-y-auto">
+              {ticketsByKitchen[kitchenId].map(ticket => ( <TicketCard
+              key={ticket.id} ticket={ticket} onMove={() =>
+              moveToProcessed(ticket)} isProcessed={false} /> ))}
+            </div>
+          </div>
+          ))}
+        </div>
+      </div>
+      <div
+        className="w-64 bg-green-50 rounded-lg shadow-sm border border-green-200 flex flex-col overflow-hidden"
+      >
+        <div
+          className="bg-green-100 text-green-900 text-center py-2 font-bold border-b border-green-200 uppercase tracking-widest text-sm flex justify-between px-3 items-center"
+        >
+          <span>SALIDA</span>
+          <button
+            onClick="{deleteProcessed}"
+            className="p-1 hover:bg-green-200 rounded text-green-700"
+          >
+            <Trash2 size="{14}" />
+          </button>
+        </div>
+        <div className="p-2 flex-1 overflow-y-auto relative">
+          {processedTickets.map(ticket => ( <TicketCard key={ticket.id}
+          ticket={ticket} onMove={() => {}} isProcessed={true} /> ))}
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+); }
