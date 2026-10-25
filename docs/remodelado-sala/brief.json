@@ -1,0 +1,75 @@
+{
+  "schema_version": "banana.visual-brief.v1",
+  "goal": "Visualización privada y realista del remodelado de una sala-comedor angosta en estilo moderno, a partir de la foto actual, para evaluar colores, mobiliario y distribución.",
+  "facts": [
+    "Sala-comedor angosta y alargada vista desde un extremo, con piso de porcelanato claro de formato grande.",
+    "Techo blanco con moldura de corona perimetral y columnas o machones con moldura a ambos lados.",
+    "Comedor al centro, zona de sofá al fondo, ventana al fondo y apertura a la derecha hacia la escalera."
+  ],
+  "locks": [
+    "Conservar el mismo punto de vista, perspectiva y proporciones angostas y alargadas de la sala.",
+    "Conservar el piso de porcelanato claro con sus juntas y reflejos.",
+    "Conservar el techo con sus molduras de corona, las columnas con molduras y la apertura de la derecha hacia la escalera.",
+    "Conservar la distribución: comedor en el centro, sala al fondo, ventana al fondo, puerta oscura a la derecha.",
+    "No agregar ni quitar paredes, columnas, ventanas ni puertas."
+  ],
+  "freedoms": [
+    "Estilo exacto del mobiliario, textura de tejidos y forma de plantas y lámparas, dentro de lo pedido.",
+    "Posición precisa de plafones LED y plantas, sin romper la distribución."
+  ],
+  "direction": {
+    "mode": "creative",
+    "thesis": "Sala-comedor moderna, cálida y ordenada, con contraste sereno entre verde salvia, blanco cálido y madera oscura.",
+    "signature": "La pared del fondo en verde salvia enmarcada por cortinas de lino claro de piso a techo.",
+    "avoid": "Aspecto de catálogo frío, saturación excesiva y objetos decorativos sueltos."
+  },
+  "composition": [
+    "Mantener el encuadre vertical de la foto original con la sala en fuga hacia el fondo.",
+    "Rack bajo negro con espejo encima en la pared izquierda, sin tapar la columna.",
+    "Comedor de madera oscura con sillas grises lisas y lámpara colgante negra sobre la mesa.",
+    "Zona de sofá al fondo: sofá café con cojines beige y mostaza, alfombra gris clara y mesa de centro redonda.",
+    "Lámpara de pie junto al sofá y plantas grandes en esquinas libres.",
+    "Espacio despejado, sin objetos sueltos."
+  ],
+  "rendering": [
+    "Fotografía interior realista, iluminación cálida de plafones LED empotrados en el techo, luz suave y sombras naturales.",
+    "Pared del fondo en verde salvia mate, resto de paredes en blanco cálido.",
+    "Cortinas de lino claro de piso a techo con caída natural.",
+    "Madera oscura en la mesa, tapiz gris liso en las sillas, metal negro mate en la lámpara colgante y el rack."
+  ],
+  "typography": {
+    "exact_copy": [],
+    "instructions": []
+  },
+  "references": [
+    {
+      "disclosure_alias": "foto actual de la sala-comedor",
+      "role": "object",
+      "purpose": "conservar la geometría, perspectiva, piso, techo con molduras y distribución del espacio",
+      "subject_id": "sala-comedor",
+      "authority": {
+        "rights_or_license": "affirmed",
+        "identity_or_likeness": "affirmed",
+        "customer_or_private_asset": "affirmed",
+        "endorsement_or_representation": "not_applicable",
+        "provider_transmission": "affirmed",
+        "intended_use": "Visualización privada del remodelado del hogar propio, sin publicar ni atribuir a terceros; el retrato enmarcado de la pared izquierda se retira."
+      }
+    }
+  ],
+  "output": {
+    "aspect_ratio": "3:4",
+    "image_size": "1K",
+    "mime_type": "image/jpeg",
+    "delivery_notes": ["Vertical como la foto original; legible para evaluar colores y mobiliario."]
+  },
+  "review_tests": [
+    "Perspectiva, proporciones y piso de porcelanato coinciden con la foto original.",
+    "Techo con moldura de corona, columnas y apertura derecha se conservan.",
+    "Pared del fondo en verde salvia y el resto en blanco cálido.",
+    "Aparecen sofá café con cojines beige y mostaza, alfombra gris clara, mesa de centro redonda y cortinas de lino piso a techo.",
+    "Comedor de madera oscura con sillas grises lisas y lámpara colgante negra; rack negro con espejo en la pared izquierda.",
+    "Plafones LED cálidos, lámpara de pie y plantas grandes presentes.",
+    "No quedan parlante, bolsa, colchón, ropa, retrato, adornos ni periódico; no hay objetos sueltos ni texto inventado."
+  ]
+}
